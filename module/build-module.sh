@@ -1,12 +1,25 @@
 #!/bin/bash
 # 构建 Xposed 模块 APK（simspoof：SIM 美区伪装 + 视频页解锁横屏）
 set -e
-JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+JAVA_HOME=${JAVA_HOME:-/usr/lib/jvm/java-21-openjdk-amd64}
 M=$(cd "$(dirname "$0")" && pwd)
 UP=${UPDATER:-$(cd "$(dirname "$0")/../updater" && pwd)}
 SDK=${ANDROID_SDK:-$HOME/Android/Sdk}
 ANDROID_JAR=${ANDROID_JAR:-$SDK/platforms/android-34/android.jar}
-BT=${BT:-$SDK/build-tools-34}
+# —— SDK 路径自适应：兼容「$SDK/build-tools-34」与标准「$SDK/build-tools/34.0.0」两种布局 ——
+if [ -z "$BT" ]; then
+    if [ -d "$SDK/build-tools-34" ]; then
+        BT=$SDK/build-tools-34
+    else
+        BT=$(ls -d "$SDK"/build-tools/*/ 2>/dev/null | sort -V | tail -1)
+        BT=${BT%/}
+    fi
+fi
+if [ ! -d "$BT" ]; then echo "找不到 build-tools：请设 ANDROID_SDK 或 BT 环境变量（当前 SDK=$SDK）"; exit 1; fi
+if [ ! -f "$ANDROID_JAR" ]; then
+    ANDROID_JAR=$(ls -d "$SDK"/platforms/*/android.jar 2>/dev/null | sort -V | tail -1)
+fi
+if [ ! -f "$ANDROID_JAR" ]; then echo "找不到 android.jar：请装 platforms;android-34 或设 ANDROID_JAR"; exit 1; fi
 OUT=$M/build
 
 rm -rf "$OUT"; mkdir -p "$OUT/classes" "$OUT/dex" "$OUT/apk"

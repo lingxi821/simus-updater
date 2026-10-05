@@ -11,6 +11,7 @@ OUT=$P/build
 LIBS=$P/libs
 SDK=${ANDROID_SDK:-$HOME/Android/Sdk}
 ANDROID_JAR=${ANDROID_JAR:-$SDK/platforms/android-34/android.jar}
+[ -f "$ANDROID_JAR" ] || ANDROID_JAR=$(ls -d "$SDK"/platforms/*/android.jar 2>/dev/null | sort -V | tail -1)
 
 CP="$LIBS/guava-32.0.1-jre.jar:$LIBS/failureaccess-1.0.1.jar:$LIBS/jsr305-3.0.2.jar:$LIBS/apksig-8.0.2.jar:$LIBS/auto-value-annotations-1.10.1.jar:$LIBS/gson-2.13.1.jar:$LIBS/commons-io-2.20.0.jar"
 
