@@ -1,8 +1,11 @@
 # 构建产物
-build/
-out/
-*.apk
+# 注意：不要写裸 `build/` —— 它会匹配任意层级的 build 目录，
+# 把 LSPatch 源码里的 com/android/tools/build/apkzlib/ 也一起忽略掉（CI 上就编不过了）
+/updater/build/
+/module/build/
+/out/
 *.idsig
+*.apk
 !updater/assets/simspoof.apk
 
 # 私钥与签名口令：绝不入库
@@ -13,8 +16,8 @@ out/
 local.properties
 .env
 
-# 体积大、可从 SDK 复制
-updater/libs/r8-*.jar
+# 体积大、可从 SDK/Maven 获取
+/updater/libs/r8-*.jar
 
 # IDE / 系统
 .idea/

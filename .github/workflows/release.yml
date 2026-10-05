@@ -11,6 +11,11 @@ on:
   push:
     tags: [ 'v*' ]
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: '只构建校验、不发布 Release（用于验证流水线，避免覆盖已有 Release 资源）'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -88,6 +93,7 @@ jobs:
           fi
 
       - name: 生成 Release（附 APK）
+        if: ${{ !inputs.dry_run }}
         uses: softprops/action-gh-release@v2
         with:
           files: |
