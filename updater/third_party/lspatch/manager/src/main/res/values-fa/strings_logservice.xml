@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="log_service_channel">پایش گزارش‌ها</string>
+    <string name="log_service_title">LSPatch در حال پایش گزارش‌هاست</string>
+    <string name="log_service_text">جمع‌آوری گزارش‌های چارچوب و برنامه‌های وصله‌شده</string>
+</resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bg">#FF0B0F14</color>
+    <color name="surface">#FF151A21</color>
+    <color name="cyan">#FF25F4EE</color>
+    <color name="pink">#FFFE2C55</color>
+    <color name="icon_bg">#FF101820</color>
+</resources>

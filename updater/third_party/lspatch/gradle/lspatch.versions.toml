@@ -1,0 +1,75 @@
+[versions]
+room = "2.8.3"
+accompanist = "0.36.0"
+nav3 = "1.1.6"
+shizuku = "13.1.5"
+hiddenapi = "4.4.0"
+compose-bom = "2026.06.01"
+# material3 is pinned ahead of the BOM: the expressive navigation-suite API (PanelBar's
+# ShortNavigationBarItem/WideNavigationRailItem edit mode) is still internal in the BOM's material3.
+m3 = "1.5.0-alpha25"
+# Kept in step with the core submodule's Kotlin, whose modules LSPatch links against: AGP 9's
+# built-in compiler is pinned by this version, and it must be new enough to read core's 2.4.10 metadata.
+kotlin = "2.4.10"
+ksp = "2.3.2"
+commons-io = "2.20.0"
+beust-jcommander = "1.82"
+google-gson = "2.13.1"
+spotless = "8.10.0"
+# Latest ktfmt; Kotlin is formatted in the same 4-space kotlinlang style the core (Vector) uses.
+ktfmt = "0.64"
+
+[plugins]
+google-devtools-ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+rikka-tools-refine = { id = "dev.rikka.tools.refine", version.ref = "hiddenapi" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+diffplug-spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
+
+[libraries]
+androidx-customview = "androidx.customview:customview:1.2.0"
+androidx-customview-poolingcontainer = "androidx.customview:customview-poolingcontainer:1.1.0"
+
+androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose-bom" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui" }
+androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
+androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
+androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
+androidx-compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "m3" }
+androidx-compose-material3-adaptive-navigation-suite = { module = "androidx.compose.material3:material3-adaptive-navigation-suite", version.ref = "m3" }
+
+androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "nav3" }
+androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "nav3" }
+androidx-lifecycle-viewmodel-navigation3 = "androidx.lifecycle:lifecycle-viewmodel-navigation3:2.11.0"
+
+androidx-lifecycle-viewmodel-compose = "androidx.lifecycle:lifecycle-viewmodel-compose:2.9.2"
+
+androidx-activity-compose = "androidx.activity:activity-compose:1.10.1"
+
+androidx-core-ktx = "androidx.core:core-ktx:1.16.0"
+
+androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "room" }
+androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "room" }
+androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "room" }
+
+google-accompanist-pager = { module = "com.google.accompanist:accompanist-pager", version.ref = "accompanist" }
+google-accompanist-swiperefresh = { module = "com.google.accompanist:accompanist-swiperefresh", version.ref = "accompanist" }
+
+rikka-shizuku-api = { module = "dev.rikka.shizuku:api", version.ref = "shizuku" }
+rikka-shizuku-provider = { module = "dev.rikka.shizuku:provider", version.ref = "shizuku" }
+
+rikka-refine = { module = "dev.rikka.tools.refine:runtime", version.ref = "hiddenapi" }
+
+rikka-hidden-stub = { module = "dev.rikka.hidden:stub", version.ref = "hiddenapi" }
+
+
+commons-io = { module = "commons-io:commons-io", version.ref = "commons-io" }
+
+beust-jcommander = { module = "com.beust:jcommander", version.ref = "beust-jcommander" }
+
+google-gson = { module = "com.google.code.gson:gson", version.ref = "google-gson" }
+
+hiddenapibypass = { module = "org.lsposed.hiddenapibypass:hiddenapibypass", version = "6.1" }
+material = { module = "com.google.android.material:material", version = "1.12.0" }
+androidx-preference = { module = "androidx.preference:preference", version = "1.2.1" }

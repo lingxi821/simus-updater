@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="log_service_channel">Pemantauan log</string>
+    <string name="log_service_title">LSPatch sedang memantau log</string>
+    <string name="log_service_text">Mengumpulkan log framework dan aplikasi yang ditambal</string>
+</resources>

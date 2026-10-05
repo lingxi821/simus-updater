@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- 信号格 + 底部横线，寓意「换区/联网」 -->
+    <path android:fillColor="#FFFFFFFF" android:pathData="M30,66h9v14h-9z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M44,56h9v24h-9z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M58,46h9v34h-9z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M30,84h37v5h-37z" />
+    <path android:fillColor="#FFFFFFFF" android:pathData="M72,30m-6,0a6,6 0 1,1 12,0a6,6 0 1,1 -12,0" />
+</vector>

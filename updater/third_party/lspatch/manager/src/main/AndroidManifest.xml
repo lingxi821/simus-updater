@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission
+        android:name="android.permission.QUERY_ALL_PACKAGES"
+        tools:ignore="QueryAllPackagesPermission" />
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
+    <!-- Without Shizuku, installs and self-update fall back to the OS session installer, which
+         requires the "install unknown apps" grant this permission unlocks; otherwise the platform
+         aborts every session with STATUS_FAILURE_ABORTED / "User rejected permission". -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Module Store fetches the LSPosed modules.json catalog. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- The manager runs a foreground service so its process is not reaped in the background: a
+         patched app reaches it the moment it starts, and a reaped manager answers late or not at all.
+         Neither that nor log collection maps to a standard foreground-service bucket, so it declares
+         the "special use" type. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- So the service comes back after a reboot without the person having to open the manager. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Only ever used to ask, through the system's own dialog. Doze is what stops a manager that was
+         never opened today from answering a patched app at all. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <application
+        android:name=".LSPApplication"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.Material3.DayNight.NoActionBar">
+
+        <activity
+            android:name=".ui.activity.MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:scheme="file" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/vnd.android.package-archive" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".manager.ModuleService"
+            android:exported="true" />
+
+        <!-- On-demand service delivery: a module's own app binds this (resolving it by the
+             REQUEST_PUSH action, not by this manager's package, so a cloaked manager is still found)
+             to ask the manager to push its writable service the moment its settings UI opens, instead
+             of waiting for one of the usual push triggers. The push travels the ordinary SEND_BINDER
+             path into the module's own unmodified libxposed provider, so nothing in the module or in
+             upstream libxposed changes. Exported for the same reason ModuleService is; the manager
+             pushes only to the caller's own package, authenticated by the calling uid. -->
+        <service
+            android:name=".manager.XposedPullService"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="org.lsposed.lspatch.action.REQUEST_PUSH" />
+            </intent-filter>
+        </service>
+
+        <!-- Exported so the Shizuku shell can start it: that watchdog runs as the shell user, which is
+             the whole reason it survives what stops this app, and the shell may only start a component
+             that says it may. It grants nothing new — any app can already cause this manager to run by
+             binding the exported ModuleService below, and all this one does is make it present. -->
+        <service
+            android:name=".service.ManagerResidentService"
+            android:exported="true"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="serving modules to patched apps and monitoring their logs" />
+        </service>
+
+        <!-- Brings the service back after a reboot or an update of the manager itself. A package the
+             system considers stopped receives neither, which is exactly the state a force-stop leaves
+             it in: this covers the reboot, and the shell-side watchdog covers the rest.
+             Exported because the sender is the system rather than this app; both actions are
+             protected broadcasts, so nothing else can send them. -->
+        <receiver
+            android:name=".manager.BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Hands one patched apk to whatever installer the device has, when neither the shell nor
+             the platform session could install it. A patched apk lives in this app's private
+             storage, so it can only travel as a granted content uri rather than as a path. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.patched"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/patched_apk_paths" />
+        </provider>
+
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="${applicationId}.shizuku"
+            android:enabled="true"
+            android:exported="true"
+            android:multiprocess="false"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
+    </application>
+
+</manifest>

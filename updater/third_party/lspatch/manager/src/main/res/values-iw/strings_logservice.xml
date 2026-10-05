@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="log_service_channel">ניטור יומנים</string>
+    <string name="log_service_title">LSPatch מנטר יומנים</string>
+    <string name="log_service_text">אוסף את יומני המסגרת והאפליקציות שתוקנו</string>
+</resources>
