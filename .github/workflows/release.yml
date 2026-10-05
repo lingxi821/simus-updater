@@ -43,6 +43,7 @@ jobs:
           if [ -n "$KS_B64" ] && [ -n "$KS_PASS" ]; then
             echo "$KS_B64" | base64 -d > updater/app.p12
             echo "使用仓库 Secrets 里的正式密钥签名"
+            echo "SIGNED_OFFICIAL=1" >> "$GITHUB_ENV"
           else
             KS_PASS=ci-throwaway
             keytool -genkeypair -keystore updater/app.p12 -storetype PKCS12 -alias simus \
@@ -69,12 +70,21 @@ jobs:
           unzip -l updater/simusupdater.apk | grep -q 'assets/simspoof.apk'
           unzip -l updater/simusupdater.apk | grep -q 'assets/lspatch/loader.dex'
 
+      - name: 规整文件名（GitHub 会丢掉资源名里的中文）
+        run: cp "module/simspoof-US模块.apk" module/simspoof-US-module.apk
+
+      - name: 标记签名方式
+        run: |
+          if [ -z "$SIGNED_OFFICIAL" ]; then
+            echo "RELEASE_NOTE=⚠️ 本次构建**未配置签名 Secrets**，APK 由 CI 临时密钥签名：能装能用，但与作者本机发布的历史版本签名不同，无法互相覆盖安装。" >> "$GITHUB_ENV"
+          fi
+
       - name: 生成 Release（附 APK）
         uses: softprops/action-gh-release@v2
         with:
           files: |
             updater/simusupdater.apk
-            module/simspoof-US模块.apk
+            module/simspoof-US-module.apk
           generate_release_notes: true
           body: |
             ## SIM US Updater ${{ github.ref_name }}
@@ -85,7 +95,9 @@ jobs:
             | 文件 | 说明 |
             |------|------|
             | `simusupdater.apk` | 端上工具 App（安装它，然后点「一键更新并安装」） |
-            | `simspoof-US模块.apk` | Xposed 模块本体（一般不用手动装，已内嵌在工具里） |
+            | `simspoof-US-module.apk` | Xposed 模块本体（一般不用手动装，已内嵌在工具里） |
+
+            ${{ env.RELEASE_NOTE }}
 
             > 本 Release 只包含本项目自己的构建产物，不含任何 TikTok 客户端内容。
             > 首次使用若是官方版 TikTok，需先卸载官方版（签名不同无法覆盖）。
