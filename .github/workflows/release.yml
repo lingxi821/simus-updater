@@ -77,12 +77,23 @@ jobs:
       - name: 校验产物
         run: |
           set -e
-          if unzip -p module/simspoof-US模块.apk classes.dex | strings | grep -q 'Lde/robv/android/xposed'; then
-            echo "!!! 模块里打进了 Xposed API 类"; exit 1
+          ls -la updater/simusupdater.apk "module/simspoof-US模块.apk"
+          DEXDUMP=$(ls -d "$ANDROID_SDK_ROOT"/build-tools/*/dexdump 2>/dev/null | sort -V | tail -1)
+          [ -n "$DEXDUMP" ] || { echo "找不到 dexdump"; exit 1; }
+          rm -rf /tmp/modchk && mkdir -p /tmp/modchk
+          unzip -o -q "module/simspoof-US模块.apk" classes.dex -d /tmp/modchk
+          CLASSES=$("$DEXDUMP" -d /tmp/modchk/classes.dex | grep "Class descriptor" | sed 's/.*: //')
+          echo "模块里定义的类："; echo "$CLASSES"
+          # 模块里绝不能【定义】Xposed API 类（LSPatch 的 VectorLegacyBridge 会拒绝加载这种模块）。
+          # 注意：仅仅“引用”这些类型是正常的 —— 运行时由 loader 提供。
+          if echo "$CLASSES" | grep -q 'de/robv/android/xposed'; then
+            echo "!!! 模块里定义了 Xposed API 类（桩类被打进 dex 了）"; exit 1
           fi
-          unzip -l updater/simusupdater.apk | grep -q 'assets/simspoof.apk'
+          echo "$CLASSES" | grep -q 'io/nidome/simspoof/SpoofModule' || { echo "!!! 缺模块主类"; exit 1; }
+          # App 里必须带着 loader 与内嵌模块
           unzip -l updater/simusupdater.apk | grep -q 'assets/lspatch/loader.dex'
-
+          unzip -l updater/simusupdater.apk | grep -q 'assets/simspoof.apk'
+          echo "产物校验通过"
       - name: 规整文件名（GitHub 会丢掉资源名里的中文）
         run: cp "module/simspoof-US模块.apk" module/simspoof-US-module.apk
 
