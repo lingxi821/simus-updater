@@ -74,7 +74,7 @@ jobs:
           unzip -l updater/simusupdater.apk | grep -q 'assets/lspatch/loader.dex'
           unzip -l updater/simusupdater.apk | grep -q 'assets/simspoof.apk'
           echo "产物校验通过"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: apks
           path: |
