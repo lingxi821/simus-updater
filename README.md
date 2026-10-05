@@ -1,5 +1,9 @@
 # SIM US Updater
 
+[![build](https://github.com/lingxi821/simus-updater/actions/workflows/build.yml/badge.svg)](https://github.com/lingxi821/simus-updater/actions/workflows/build.yml)
+[![release](https://img.shields.io/github/v/release/lingxi821/simus-updater)](https://github.com/lingxi821/simus-updater/releases/latest)
+[![license](https://img.shields.io/github/license/lingxi821/simus-updater)](LICENSE)
+
 给 TikTok（国际版，`com.zhiliaoapp.musically`）**一键打补丁并安装**的 Android 工具：
 在手机上直接完成「下载官方安装包 → 端上重打包 → 内嵌 Xposed 模块 → 重签名 → 会话安装」，
 用来实现 **美区 SIM 伪装**（把 SIM/网络国家码伪装成美国、运营商伪装成 T-Mobile），
@@ -48,6 +52,12 @@ module/                       Xposed 模块（美区 SIM 伪装）
 docs/design.md                架构与实现细节
 ```
 
+## 下载（不想自己编译的话）
+
+到 [Releases](https://github.com/lingxi821/simus-updater/releases/latest) 直接下 `simusupdater.apk`，
+装到手机上即可（模块已内嵌在 App 里，不用单独装）。每次打 tag（如 `v1.0.0`）都会由
+GitHub Actions 自动构建并发布。
+
 ## 构建
 
 需要 **JDK 21**、**Android SDK**（`build-tools;34.0.0` + `platforms;android-34`）、`python3`。
@@ -80,6 +90,19 @@ export KS_PASS='你的口令'
 4. 安装过程中系统安装器会弹确认框，按提示点「继续安装」即可。
 
 Shizuku 可选：装了且已授权时，安装走 Shizuku 会话，确认更少、更顺。
+
+## 自动化
+
+| 工作流 | 触发 | 做什么 |
+|--------|------|--------|
+| `.github/workflows/build.yml` | push / PR / 手动 | 装 JDK 21 与 Android SDK 组件 → 编译引擎 + App + 模块 → 校验「模块里没有 Xposed API 类」「App 里带着 loader 与模块」→ 上传产物 |
+| `.github/workflows/release.yml` | 打 `v*` tag / 手动 | 同上构建后创建 Release，附上两个 APK |
+
+发布用的签名密钥有两种走法（`release.yml` 自动判断）：
+
+- **没配 Secrets**：CI 生成临时密钥签名——能装能用，但与你本机历史版本签名不同；
+- **配了 Secrets**（推荐）：仓库 Settings → Secrets 里加 `KS_B64`（`base64 -w0 app.p12` 的内容）
+  与 `KS_PASS`，CI 就用你的正式密钥签名，用户可以直接覆盖安装你的历史版本。
 
 ## 已知限制
 

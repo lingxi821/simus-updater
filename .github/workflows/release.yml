@@ -1,0 +1,91 @@
+name: release
+
+# 打 tag（v1.0.0 之类）时自动构建并发布 Release，附上两个 APK。
+# 签名优先级：
+#   ① 仓库 Secrets 里有 KS_B64（keystore 的 base64）与 KS_PASS → 用你的正式密钥签名，
+#      这样用户可以直接覆盖安装你的历史版本；
+#   ② 没有 Secrets → 用 CI 临时密钥签名（能装能用，但与你本机历史版本签名不同）。
+# 生成 Secrets：
+#   base64 -w0 app.p12 > ks.b64    # 内容贴到 KS_B64
+on:
+  push:
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: 安装 Android SDK 组件
+        uses: android-actions/setup-android@v3
+      - run: sdkmanager "build-tools;34.0.0" "platforms;android-34"
+
+      - name: 拉取构建依赖（r8/D8）
+        run: ./scripts/fetch-deps.sh
+
+      - name: 准备签名密钥
+        env:
+          KS_B64: ${{ secrets.KS_B64 }}
+          KS_PASS: ${{ secrets.KS_PASS }}
+        run: |
+          set -e
+          if [ -n "$KS_B64" ] && [ -n "$KS_PASS" ]; then
+            echo "$KS_B64" | base64 -d > updater/app.p12
+            echo "使用仓库 Secrets 里的正式密钥签名"
+          else
+            KS_PASS=ci-throwaway
+            keytool -genkeypair -keystore updater/app.p12 -storetype PKCS12 -alias simus \
+                    -keyalg RSA -keysize 2048 -validity 10000 \
+                    -storepass "$KS_PASS" -keypass "$KS_PASS" -dname "CN=simus-updater-ci"
+            echo "未配置 Secrets，使用 CI 临时密钥签名"
+          fi
+          echo "KS_PASS=$KS_PASS" >> "$GITHUB_ENV"
+
+      - name: 构建
+        run: |
+          set -e
+          ./updater/build-engine.sh
+          ./updater/build-app.sh
+          ./module/build-module.sh
+          ls -la updater/simusupdater.apk module/simspoof-US模块.apk
+
+      - name: 校验产物
+        run: |
+          set -e
+          if unzip -p module/simspoof-US模块.apk classes.dex | strings | grep -q 'Lde/robv/android/xposed'; then
+            echo "!!! 模块里打进了 Xposed API 类"; exit 1
+          fi
+          unzip -l updater/simusupdater.apk | grep -q 'assets/simspoof.apk'
+          unzip -l updater/simusupdater.apk | grep -q 'assets/lspatch/loader.dex'
+
+      - name: 生成 Release（附 APK）
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            updater/simusupdater.apk
+            module/simspoof-US模块.apk
+          generate_release_notes: true
+          body: |
+            ## SIM US Updater ${{ github.ref_name }}
+
+            端上给 TikTok（`com.zhiliaoapp.musically`）打补丁并安装：内嵌美区 SIM 伪装模块，
+            保留原有登录与数据。详细说明见 [README](https://github.com/${{ github.repository }}#readme)。
+
+            | 文件 | 说明 |
+            |------|------|
+            | `simusupdater.apk` | 端上工具 App（安装它，然后点「一键更新并安装」） |
+            | `simspoof-US模块.apk` | Xposed 模块本体（一般不用手动装，已内嵌在工具里） |
+
+            > 本 Release 只包含本项目自己的构建产物，不含任何 TikTok 客户端内容。
+            > 首次使用若是官方版 TikTok，需先卸载官方版（签名不同无法覆盖）。

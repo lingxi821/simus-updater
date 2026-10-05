@@ -1,0 +1,67 @@
+name: build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: 安装 Android SDK 组件（build-tools;34.0.0 + platforms;android-34）
+        uses: android-actions/setup-android@v3
+      - run: sdkmanager "build-tools;34.0.0" "platforms;android-34"
+
+      - name: 拉取构建依赖（r8/D8）
+        run: ./scripts/fetch-deps.sh
+
+      - name: 生成临时签名密钥（CI 用，不涉及任何私钥）
+        env:
+          KS_PASS: ci-throwaway
+        run: |
+          keytool -genkeypair -keystore updater/app.p12 -storetype PKCS12 -alias simus \
+                  -keyalg RSA -keysize 2048 -validity 10000 \
+                  -storepass "$KS_PASS" -keypass "$KS_PASS" -dname "CN=simus-updater-ci"
+
+      - name: 构建打包引擎
+        run: ./updater/build-engine.sh
+
+      - name: 构建 App
+        env:
+          KS_PASS: ci-throwaway
+        run: ./updater/build-app.sh
+
+      - name: 构建 Xposed 模块
+        env:
+          KS_PASS: ci-throwaway
+        run: ./module/build-module.sh
+
+      - name: 校验产物
+        run: |
+          set -e
+          ls -la updater/simusupdater.apk module/simspoof-US模块.apk
+          # 模块里绝不能含 Xposed API 类（会被 LSPatch 拒绝加载）
+          if unzip -p module/simspoof-US模块.apk classes.dex | strings | grep -q 'Lde/robv/android/xposed'; then
+            echo "!!! 模块里打进了 Xposed API 类"; exit 1
+          fi
+          # App 里必须带着引擎与模块
+          unzip -l updater/simusupdater.apk | grep -q 'assets/simspoof.apk'
+          unzip -l updater/simusupdater.apk | grep -q 'assets/lspatch/loader.dex'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apks
+          path: |
+            updater/simusupdater.apk
+            module/simspoof-US模块.apk
+          if-no-files-found: error
